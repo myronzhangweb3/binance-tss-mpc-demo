@@ -1,0 +1,16 @@
+{
+  "relayer": {
+    "mpcConfig": {
+      "port": "9002",
+      "keysharePath": "keyshare/mpc2.keyshare",
+      "key": "CAASpwkwggSjAgEAAoIBAQDUbQpRTNAWstuXcaLdGG9oP5gpKphCbENvv1CaNgozd0TZ1GfVw0fztN43hajG+BN99oZWNKUs20IjRv49yqk+Yr/1y0yguURcUg83nVAjF7tpmrmDSZK1QloVmZf9fJpiV2xhq8S7GvuiHlfEUMLkbXLjNLGMvZBtDlfI43UncT/JxBb8AmLh/+RZ8xDNfrz5wA3CHoHIiT/xMCbwsddTfNGV9mW5UAD3Z0HTjCWlAXBHlGZawy2kZhZIf4FyyHxsErPLjiPSuwxMQL9U7+PkDjZyFf1g3i/5m/qB6TSFF7BsBJStuTQ4X3bE2fAJ9J97riFw2uVXK6PUL7apU0nJAgMBAAECggEAI3GaMhyF7/Oh7i/4w7lLBXLu+Zdw1kxoKCIc2c5Af3vcEhh9xs4RmFlKZqs3kRNddTwICCQ6lzRyYZ5712WUPaOOcf2c6IhhHqJWhaoK8AAKtkEpyP0irHnIvCfnk1USEWyS2e0mIy4KZG95p3juO90DOWPWaCxNB9VH0m4ZYx4VXJ68SF6fNHkd+aMYWAocXwC3ZcwBkPH0KCbfaEq5BC4Ie4k2hjLbXpq4AUmLgvF8yJjHMB9YWZtsHUF/8R87bX8Vyi8pZZBEXK5wYjEx6EIAzGIi5m3xbgBFIzMJzPnVUPwpecrpR9cOfMfMyqerd+aaNj/x8SoA8kQ79rJNHQKBgQDciw8eEThADfscd5N8PsHZXx+3raTi0qxh4VSuZFBmJIYtMeXPSfc3HxKACnalqokOU0VIU/fMAKHwk589/zqbQn0nRHjjDrPNIDO9j/KHAmAdPtWQXlvK2scBWFoiYayemYcXI7rGeVZdomWIHVbTN0wo0TVOIaF8UAj5HZ8ESwKBgQD2k+XDZaEzNrZR3/XbO4A4rVpl5NL49CQ+0UFju2kRIVBKgKIn/s0I1VsWTJ4trVSv6UTwQp7jqneTgxD6LwCmsB2VfOB+h9Kq0T5zFnJYeD0dha79WWQ4sALPFOf8b5s+JMTWJqbSoV2muoC67eSpCyQX1YMUCM1paXtds9MVuwKBgFppe7oUzx2bXa2O69yMkcW+NG+FdUozmc3KpX+Uyk0Ffig7A35WUU28pEXvhDJoViWUR5veKIDuZXUN38N3xZvuxwX5ESHsXhOitvNodsGYXLTAlKbJuBHSXLEVemYL6steHz6CPEivZ5OdRshlVrniOoulMJgmO2COIw+VcCI/AoGBAJXhOFwZPm7+5rvFwo/MDxhkZvpgqMyiuhVk5LZWiHrdIQzoO6jL/J1N8twPHmbtYPi8dicEl8gTKjQECyHHyEGJ87GWAm9m5+rk3WzfTAnyrFNxmvhsibrbYhm1v3116YtQlkUFoYmOhHqACxeU2tTV7M5//fkDkLhuYYqHb9tZAoGARS+XoHFikVwxytgMzfOlnnAGx2m20jKcjgWn+/Q21ZsXvxg3y0wjPNu2awFocbrer3gYULBkIvlFuMULRxPXcrGONX8gbYUEV0Kl0lEy8spIjJJv9fNt8LmAgwL9xCHtWg1a7hPWRTc6AnwoPONOuh8vc0KPO7PYlKhmCn94Ob4=",
+      "topologyConfiguration": {
+        "path": "topology.json"
+      },
+      "commHealthCheckInterval": "24h"
+    },
+    "logLevel": "debug",
+    "logFile": "./logs/out2.log",
+    "healthPort": "8092"
+  }
+}
