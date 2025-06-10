@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/sygmaprotocol/sygma-core/store"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"tss-demo/service/event_handlers"
 	"tss-demo/tss_util/comm/elector"
 	"tss-demo/tss_util/comm/p2p"
 	"tss-demo/tss_util/health"
@@ -24,6 +26,7 @@ import (
 	"tss-demo/tss_util/tss"
 	"tss-demo/tss_util/tss_config"
 
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/sygmaprotocol/sygma-core/observability"
 	"github.com/sygmaprotocol/sygma-core/store/lvldb"
 
@@ -39,13 +42,14 @@ var (
 	Blockstore         *store.BlockStore
 	FrostKeyshareStore *keyshare.FrostKeyshareStore
 	PropStore          *propStore.PropStore
+
+	KeygenEventHandler *event_handlers.KeygenEventHandler
+	SignEventHandler   *event_handlers.SignEventHandler
 )
 
 // Run TODO 这里有问题，启动失败
 func Run() error {
 	var err error
-
-	//tss_config.BindFlags(&cobra.Command{})
 
 	configFlag := viper.GetString(tss_config.ConfigFlagName)
 	configURL := viper.GetString("tss.config_url")
@@ -141,6 +145,10 @@ func Run() error {
 
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
 
+	l := log.With().Str("chain", fmt.Sprintf("%v", "name"))
+	KeygenEventHandler = event_handlers.NewKeygenEventHandler(l, Coordinator, host, communication, keyshareStore, networkTopology.Threshold)
+	SignEventHandler = event_handlers.NewSignEventHandler(l, Coordinator, host, communication, keyshareStore)
+
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
 		syscall.SIGTERM,
@@ -151,9 +159,11 @@ func Run() error {
 	relayerName := viper.GetString("name")
 	log.Info().Msgf("Started relayer: %s with PID: %s. Version: v%s", relayerName, host.ID().Pretty(), Version)
 
-	_, err = keyshareStore.GetKeyshare()
+	key, err := keyshareStore.GetKeyshare()
 	if err != nil {
 		log.Info().Msg("Relayer not part of MPC. Waiting for refresh event...")
+	} else {
+		log.Info().Msgf("MPC key address: %s", ethcrypto.PubkeyToAddress(*key.Key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
 	}
 
 	sig := <-sysErr

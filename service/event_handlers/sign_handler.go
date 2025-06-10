@@ -5,61 +5,84 @@ package event_handlers
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/binance-chain/tss-lib/common"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"math/big"
 	"tss-demo/tss_util/comm"
 	"tss-demo/tss_util/tss"
-	"tss-demo/tss_util/tss/ecdsa/keygen"
+	"tss-demo/tss_util/tss/ecdsa/signing"
 )
 
-type KeygenEventHandler struct {
+type SignEventHandler struct {
+	ctx           context.Context
 	log           zerolog.Logger
 	coordinator   *tss.Coordinator
 	host          host.Host
 	communication comm.Communication
-	storer        keygen.ECDSAKeyshareStorer
-	bridgeAddress common.Address
-	threshold     int
+	fetcher       signing.SaveDataFetcher
 }
 
-func NewKeygenEventHandler(
+func NewSignEventHandler(
 	logC zerolog.Context,
 	coordinator *tss.Coordinator,
 	host host.Host,
 	communication comm.Communication,
-	storer keygen.ECDSAKeyshareStorer,
-	threshold int,
-) *KeygenEventHandler {
-	return &KeygenEventHandler{
+	fetcher signing.SaveDataFetcher,
+) *SignEventHandler {
+	return &SignEventHandler{
+		ctx:           context.Background(),
 		log:           logC.Logger(),
 		coordinator:   coordinator,
 		host:          host,
 		communication: communication,
-		storer:        storer,
-		threshold:     threshold,
+		fetcher:       fetcher,
 	}
 }
 
-func (eh *KeygenEventHandler) HandleEvents() error {
-	eh.log.Info().Msgf("Resolved keygen message")
+func (eh *SignEventHandler) HandleEvents(hash string) (string, error) {
+	eh.log.Info().Msgf("Resolved sign message. Hash: %s", hash)
 
-	key, err := eh.storer.GetKeyshare()
-	if (key.Threshold != 0) && (err == nil) {
-		return nil
-	}
-
-	keygen := keygen.NewKeygen(eh.sessionID(big.NewInt(0)), eh.threshold, eh.host, eh.communication, eh.storer)
-	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{keygen}, make(chan interface{}, 1))
+	msg := big.NewInt(0)
+	hashByte, err := hex.DecodeString(hash)
 	if err != nil {
-		log.Err(err).Msgf("Failed executing keygen")
+		log.Err(err).Msgf("Failed decoding hash. hash: %s. error: %v", hash, err)
+		return "", err
 	}
-	return nil
+	msg.SetBytes(hashByte)
+	sign, err := signing.NewSigning(msg, "messageide", eh.sessionID(hash), eh.host, eh.communication, eh.fetcher)
+	if err != nil {
+		log.Err(err).Msgf("Failed executing sign")
+		return "", err
+	}
+	resultChn := make(chan interface{}, 1)
+	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{sign}, resultChn)
+	if err != nil {
+		log.Err(err).Msgf("Failed executing sign")
+		return "", err
+	}
+	for {
+		select {
+		case sig := <-resultChn:
+			{
+				eh.log.Info().Msgf("Successfully generated signature. sig: %s", sig)
+				if sig != nil {
+					sigData := sig.(*common.SignatureData)
+					return hex.EncodeToString(append(sigData.Signature, sigData.SignatureRecovery...)), nil
+				}
+				return "", nil
+			}
+		case <-eh.ctx.Done():
+			{
+				return "", fmt.Errorf("sign process shutdown")
+			}
+		}
+	}
 }
 
-func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
-	return fmt.Sprintf("keygen-%s", block.String())
+func (eh *SignEventHandler) sessionID(rlp string) string {
+	return fmt.Sprintf("sign-%s", rlp)
 }

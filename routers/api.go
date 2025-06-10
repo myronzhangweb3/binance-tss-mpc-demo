@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"tss-demo/logging"
 	"tss-demo/models"
+	"tss-demo/service"
 )
 
 type Server struct {
@@ -33,17 +34,16 @@ func (s *Server) InitTssDemoApiRouter() {
 
 	userInfo := v1.Group("/")
 
-	userInfo.POST("genkey", func(ctx *gin.Context) {
-		params := &models.GenerateAddress{}
-		if err := ctx.ShouldBindBodyWithJSON(params); err != nil {
-			msg := fmt.Sprintf("bind json error. error: %v", err)
-			logging.Log.Error(msg)
+	userInfo.GET("genkey", func(ctx *gin.Context) {
+		err := service.KeygenEventHandler.HandleEvents()
+		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code":    500,
-				"message": msg,
+				"message": fmt.Sprintf("Failed executing keygen. error: %v", err),
 			})
 			return
 		}
+
 		ctx.JSON(200, gin.H{
 			"code":    200,
 			"result":  "result",
@@ -61,9 +61,18 @@ func (s *Server) InitTssDemoApiRouter() {
 			})
 			return
 		}
+		result, err := service.SignEventHandler.HandleEvents(params.Hash)
+		if err != nil {
+			ctx.JSON(200, gin.H{
+				"code":    500,
+				"message": fmt.Sprintf("Failed executing sign. error: %v", err),
+			})
+			return
+		}
+
 		ctx.JSON(200, gin.H{
 			"code":    200,
-			"result":  "result",
+			"result":  result,
 			"message": "success",
 		})
 	})

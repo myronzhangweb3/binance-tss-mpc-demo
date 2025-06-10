@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
-	"testing"
 )
 
 func sign(chainID *big.Int, encodedTx []byte, sig []byte) (string, error) {
@@ -82,31 +81,6 @@ func buildRlp() (*big.Int, string, error) {
 	}
 
 	return chainID, hex.EncodeToString(encodedTx), nil
-}
-
-func TestGetRlp(t *testing.T) {
-	chainID, encodedTxHex, err := buildRlp()
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Printf("Hash: %s\n", encodedTxHex)
-
-	encodedTxBytes, err := hex.DecodeString(encodedTxHex)
-	tx, err := decodeRlp(encodedTxBytes)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var s types.Signer
-	switch tx.Type() {
-	case types.LegacyTxType:
-		s = types.NewEIP155Signer(chainID)
-	case types.DynamicFeeTxType:
-		s = types.NewLondonSigner(chainID)
-	default:
-		t.Fatal(err)
-	}
-	h := s.Hash(tx)
-	fmt.Printf("Need sign hash: %s\n", h)
 }
 
 func decodeRlp(encodedTx []byte) (*types.Transaction, error) {
