@@ -48,6 +48,7 @@ func (eh *KeygenEventHandler) HandleEvents() error {
 
 	key, err := eh.storer.GetKeyshare()
 	if (key.Threshold != 0) && (err == nil) {
+		eh.log.Info().Msgf("Already resolved keygen message")
 		return nil
 	}
 

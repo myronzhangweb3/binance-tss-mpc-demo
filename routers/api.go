@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"tss-demo/logging"
-	"tss-demo/models"
 	"tss-demo/service"
 )
 
@@ -16,7 +15,6 @@ func NewServer() *Server {
 	engine := gin.New()
 
 	engine.Use(gin.Recovery())
-	engine.Use(CORSMiddleware())
 
 	return &Server{
 		engine: engine,
@@ -51,7 +49,7 @@ func (s *Server) InitTssDemoApiRouter() {
 		})
 	})
 	userInfo.POST("sign", func(ctx *gin.Context) {
-		params := &models.SignRequest{}
+		params := &SignRequest{}
 		if err := ctx.ShouldBindBodyWithJSON(params); err != nil {
 			msg := fmt.Sprintf("bind json error. error: %v", err)
 			logging.Log.Error(msg)

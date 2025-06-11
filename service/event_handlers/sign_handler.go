@@ -53,7 +53,7 @@ func (eh *SignEventHandler) HandleEvents(hash string) (string, error) {
 		return "", err
 	}
 	msg.SetBytes(hashByte)
-	sign, err := signing.NewSigning(msg, "messageide", eh.sessionID(hash), eh.host, eh.communication, eh.fetcher)
+	sign, err := signing.NewSigning(msg, fmt.Sprintf("msgid-sign-%s", hash), eh.sessionID(hash), eh.host, eh.communication, eh.fetcher)
 	if err != nil {
 		log.Err(err).Msgf("Failed executing sign")
 		return "", err
@@ -68,7 +68,7 @@ func (eh *SignEventHandler) HandleEvents(hash string) (string, error) {
 		select {
 		case sig := <-resultChn:
 			{
-				eh.log.Info().Msgf("Successfully generated signature. sig: %s", sig)
+				eh.log.Info().Msgf("Successfully generated signature. sig: %x", sig)
 				if sig != nil {
 					sigData := sig.(*common.SignatureData)
 					return hex.EncodeToString(append(sigData.Signature, sigData.SignatureRecovery...)), nil
@@ -84,5 +84,5 @@ func (eh *SignEventHandler) HandleEvents(hash string) (string, error) {
 }
 
 func (eh *SignEventHandler) sessionID(rlp string) string {
-	return fmt.Sprintf("sign-%s", rlp)
+	return fmt.Sprintf("sid-sign-%s", rlp)
 }

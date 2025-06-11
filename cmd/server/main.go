@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	logging.InitLoggerWithLogFile("tx_signer", "logs/tx_signer.log")
+	logging.InitLogger("tss-demo")
 
 	var env = viper.GetString("ENV")
 	if env != "production" {
@@ -32,7 +32,7 @@ func main() {
 			panic(err)
 		}
 	}()
-	
+
 	server := routers.NewServer()
 	server.InitTssDemoApiRouter()
 

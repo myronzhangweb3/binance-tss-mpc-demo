@@ -6,14 +6,12 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/sygmaprotocol/sygma-core/store"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 	"tss-demo/service/event_handlers"
 	"tss-demo/tss_util/comm/elector"
 	"tss-demo/tss_util/comm/p2p"
@@ -21,33 +19,24 @@ import (
 	"tss-demo/tss_util/jobs"
 	"tss-demo/tss_util/keyshare"
 	"tss-demo/tss_util/metrics"
-	propStore "tss-demo/tss_util/store"
 	"tss-demo/tss_util/topology"
 	"tss-demo/tss_util/tss"
 	"tss-demo/tss_util/tss_config"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/sygmaprotocol/sygma-core/observability"
-	"github.com/sygmaprotocol/sygma-core/store/lvldb"
-
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"github.com/sygmaprotocol/sygma-core/observability"
 )
 
 var (
 	Version string
 
-	Coordinator        *tss.Coordinator
-	Blockstore         *store.BlockStore
-	FrostKeyshareStore *keyshare.FrostKeyshareStore
-	PropStore          *propStore.PropStore
-
 	KeygenEventHandler *event_handlers.KeygenEventHandler
 	SignEventHandler   *event_handlers.SignEventHandler
 )
 
-// Run TODO 这里有问题，启动失败
 func Run() error {
 	var err error
 
@@ -101,25 +90,9 @@ func Run() error {
 
 	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
-	Coordinator = tss.NewCoordinator(host, communication, electorFactory)
+	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 
-	// this is temporary solution related to specifics of aws deployment
-	// effectively it waits until old instance is killed
-	var db *lvldb.LVLDB
-	for {
-		db, err = lvldb.NewLvlDB(viper.GetString(tss_config.BlockstoreFlagName))
-		if err != nil {
-			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 10 seconds")
-			time.Sleep(10 * time.Second)
-		} else {
-			log.Info().Msg("Successfully connected to blockstore file")
-			break
-		}
-	}
-	Blockstore = store.NewBlockStore(db)
 	keyshareStore := keyshare.NewECDSAKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
-	FrostKeyshareStore = keyshare.NewFrostKeyshareStore(configuration.RelayerConfig.MpcConfig.FrostKeysharePath)
-	PropStore = propStore.NewPropStore(db)
 
 	// wait until executions are done and then stop further executions before exiting
 	exitLock := &sync.RWMutex{}
@@ -146,8 +119,8 @@ func Run() error {
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
 
 	l := log.With().Str("chain", fmt.Sprintf("%v", "name"))
-	KeygenEventHandler = event_handlers.NewKeygenEventHandler(l, Coordinator, host, communication, keyshareStore, networkTopology.Threshold)
-	SignEventHandler = event_handlers.NewSignEventHandler(l, Coordinator, host, communication, keyshareStore)
+	KeygenEventHandler = event_handlers.NewKeygenEventHandler(l, coordinator, host, communication, keyshareStore, networkTopology.Threshold)
+	SignEventHandler = event_handlers.NewSignEventHandler(l, coordinator, host, communication, keyshareStore)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,

@@ -1,4 +1,4 @@
-package test
+package tx_build
 
 import (
 	"encoding/hex"
@@ -29,7 +29,7 @@ func TestGetRlp(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := s.Hash(tx)
-	fmt.Printf("Need sign hash: %s\n", h[2:])
+	fmt.Printf("Need sign hash: %x\n", h[2:])
 }
 
 func TestGetBroadcastTx(t *testing.T) {
