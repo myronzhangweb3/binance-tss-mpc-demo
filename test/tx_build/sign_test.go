@@ -3,12 +3,18 @@ package tx_build
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"testing"
 )
 
+var (
+	evmRpc     = "https://eth-sepolia.public.blastapi.io"
+	mpcAddress = common.HexToAddress("0x9591bB8DaBe3291377f2dd4C5F3fe71fDe58957B")
+)
+
 func TestGetRlp(t *testing.T) {
-	chainID, encodedTxHex, err := buildRlp()
+	chainID, encodedTxHex, err := buildRlp(evmRpc, mpcAddress, mpcAddress)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,11 +35,11 @@ func TestGetRlp(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := s.Hash(tx)
-	fmt.Printf("Need sign hash: %x\n", h[2:])
+	fmt.Printf("Need addSignToTx hash: %x\n", h[2:])
 }
 
 func TestGetBroadcastTx(t *testing.T) {
-	chainID, _, err := buildRlp()
+	chainID, _, err := buildRlp(evmRpc, mpcAddress, mpcAddress)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +54,7 @@ func TestGetBroadcastTx(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	txHexStr, err := sign(chainID, encodeTxHexBytes, sigBytes)
+	txHexStr, err := addSignToTx(chainID, encodeTxHexBytes, sigBytes)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -13,7 +13,7 @@ import (
 	"math/big"
 )
 
-func sign(chainID *big.Int, encodedTx []byte, sig []byte) (string, error) {
+func addSignToTx(chainID *big.Int, encodedTx []byte, sig []byte) (string, error) {
 	tx, err := decodeRlp(encodedTx)
 	if err != nil {
 		return "", err
@@ -39,17 +39,13 @@ func sign(chainID *big.Int, encodedTx []byte, sig []byte) (string, error) {
 	return fmt.Sprintf("0x%s", hex.EncodeToString(data)), nil
 }
 
-func buildRlp() (*big.Int, string, error) {
-	fromAddress := common.HexToAddress("0x9591bB8DaBe3291377f2dd4C5F3fe71fDe58957B")
-	toAddress := common.HexToAddress("0x9591bB8DaBe3291377f2dd4C5F3fe71fDe58957B")
-
-	// build tx
-	client, err := rpc.DialContext(context.Background(), "https://eth-sepolia.public.blastapi.io")
+func buildRlp(evmRpc string, mpcAddress, toAddress common.Address) (*big.Int, string, error) {
+	client, err := rpc.DialContext(context.Background(), evmRpc)
 	if err != nil {
 		return nil, "", err
 	}
 	ethClient := ethclient.NewClient(client)
-	nonce, err := ethClient.NonceAt(context.Background(), fromAddress, nil)
+	nonce, err := ethClient.NonceAt(context.Background(), mpcAddress, nil)
 	if err != nil {
 		return nil, "", err
 	}
