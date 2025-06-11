@@ -51,8 +51,8 @@ To run the TSS Demo Project, execute the following commands in your terminal:
 
 ```bash
 TSS_CONFIG=config1.json NAME=p1 PORT=8001 go run cmd/server/main.go
-TSS_CONFIG=config2.json NAME=p1 PORT=8002 go run cmd/server/main.go
-TSS_CONFIG=config3.json NAME=p1 PORT=8003 go run cmd/server/main.go
+TSS_CONFIG=config2.json NAME=p2 PORT=8002 go run cmd/server/main.go
+TSS_CONFIG=config3.json NAME=p3 PORT=8003 go run cmd/server/main.go
 ```
 
 HTTP API: 
