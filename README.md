@@ -63,5 +63,5 @@ HTTP API:
 
 Config and API Params Tools:
 - [Generate Peer Private Key](https://github.com/myronzhangweb3/binance-tss-demo/blob/cbc42d77af3909b9ba8a82453234b4d10928bbab/cli/generateKey_test.go#L8)
-- [Generate Rlp](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L16)
-- [Generate Broadcast Tx](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L41)
+- [Generate Rlp](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L10)
+- [Generate Broadcast Tx](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L35)
