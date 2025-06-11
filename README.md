@@ -12,7 +12,7 @@ flowchart TD
     B --> C[RLP Encode Transaction]
     C --> D[Calculate RLP Hash]
 
-    D --> MPCNode[MPC Signing Network]
+    D --hash--> MPCNode[MPC Signing Network]
 
     subgraph MPCNode
         direction LR
@@ -20,7 +20,7 @@ flowchart TD
         N1 <---> N3
     end
 
-    MPCNode --> E[Generate Distributed Signature]
+    MPCNode --r,s,v--> E[Generate Distributed Signature]
     E --> F[Collect Signature Result]
     F --> G[Insert Signature into Transaction]
     G --> H[Build Complete Signed Transaction]
@@ -33,7 +33,6 @@ flowchart TD
     style N1 fill:#f9d6c5,stroke:#333,stroke-width:2px,shape:circle
     style N2 fill:#f9d6c5,stroke:#333,stroke-width:2px,shape:circle
     style N3 fill:#f9d6c5,stroke:#333,stroke-width:2px,shape:circle
-    style I fill:#c5d8f9,stroke:#333,stroke-width:2px
     style K fill:#f0c0d0,stroke:#333,stroke-width:2px
 ```
 
