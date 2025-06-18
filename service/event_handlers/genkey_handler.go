@@ -45,7 +45,7 @@ func NewKeygenEventHandler(
 	}
 }
 
-func (eh *KeygenEventHandler) HandleEvents() (string, error) {
+func (eh *KeygenEventHandler) HandleEvents(sid string) (string, error) {
 	eh.log.Info().Msgf("Resolved keygen message")
 
 	key, err := eh.storer.GetKeyshare()
@@ -54,7 +54,7 @@ func (eh *KeygenEventHandler) HandleEvents() (string, error) {
 		return "", nil
 	}
 
-	keygen := keygen.NewKeygen(eh.sessionID(), eh.threshold, eh.host, eh.communication, eh.storer)
+	keygen := keygen.NewKeygen(eh.sessionID(sid), eh.threshold, eh.host, eh.communication, eh.storer)
 	resultChn := make(chan interface{}, 1)
 	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{keygen}, resultChn)
 	if err != nil {
@@ -76,6 +76,6 @@ func (eh *KeygenEventHandler) HandleEvents() (string, error) {
 	}
 }
 
-func (eh *KeygenEventHandler) sessionID() string {
-	return fmt.Sprintf("keygen")
+func (eh *KeygenEventHandler) sessionID(sid string) string {
+	return fmt.Sprintf("keygen-%s", sid)
 }
