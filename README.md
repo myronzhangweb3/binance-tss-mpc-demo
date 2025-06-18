@@ -47,6 +47,12 @@ For a deeper understanding of the implementation, refer to the [Sygma Relayer v2
 
 ## Getting Started
 
+### Generate P2P Private Key
+
+[Generate Peer Private Key](https://github.com/myronzhangweb3/binance-tss-demo/blob/cbc42d77af3909b9ba8a82453234b4d10928bbab/cli/generateKey_test.go#L8)
+
+
+### Start Server
 To run the TSS Demo Project, execute the following commands in your terminal:
 
 ```bash
@@ -55,12 +61,48 @@ TSS_CONFIG=config2.json NAME=p2 PORT=8002 go run cmd/server/main.go
 TSS_CONFIG=config3.json NAME=p3 PORT=8003 go run cmd/server/main.go
 ```
 
-HTTP API: 
-- [health.http](test/http/health.http)
-- [genkey.http](test/http/genkey.http)
-- [sign.http](test/http/sign.http)
+### Generate Key
 
-Config and API Params Tools:
-- [Generate Peer Private Key](https://github.com/myronzhangweb3/binance-tss-demo/blob/cbc42d77af3909b9ba8a82453234b4d10928bbab/cli/generateKey_test.go#L8)
-- [Generate Rlp](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L10)
-- [Generate Broadcast Tx](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L35)
+```bash
+curl --location --request GET 'http://127.0.0.1:8001/api/v1/genkey' &
+curl --location --request GET 'http://127.0.0.1:8002/api/v1/genkey' &
+curl --location --request GET 'http://127.0.0.1:8003/api/v1/genkey' &
+```
+
+### Generate RLP
+
+[Generate Rlp](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L10)
+
+###  Sign
+```bash
+curl --location --request POST 'http://127.0.0.1:8001/api/v1/sign' \
+--header 'Content-Type: application/json' \
+--header 'Accept: */*' \
+--header 'Connection: keep-alive' \
+--data-raw '{
+  "address": "0xB7075A4fEFA0cAf47296B6986947aDa23ccA1fBa",
+  "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
+}' &
+
+curl --location --request POST 'http://127.0.0.1:8002/api/v1/sign' \
+--header 'Content-Type: application/json' \
+--header 'Accept: */*' \
+--header 'Connection: keep-alive' \
+--data-raw '{
+  "address": "0xB7075A4fEFA0cAf47296B6986947aDa23ccA1fBa",
+  "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
+}' &
+
+curl --location --request POST 'http://127.0.0.1:8003/api/v1/sign' \
+--header 'Content-Type: application/json' \
+--header 'Accept: */*' \
+--header 'Connection: keep-alive' \
+--data-raw '{
+  "address": "0xB7075A4fEFA0cAf47296B6986947aDa23ccA1fBa",
+  "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
+}' &
+```
+
+### Broadcast
+
+[Generate Broadcast Tx](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L35)
