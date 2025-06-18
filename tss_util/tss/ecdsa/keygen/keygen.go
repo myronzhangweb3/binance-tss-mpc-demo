@@ -6,6 +6,7 @@ package keygen
 import (
 	"context"
 	"errors"
+	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 	comm2 "tss-demo/tss_util/comm"
 	"tss-demo/tss_util/keyshare"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
@@ -94,7 +94,7 @@ func (k *Keygen) Run(
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm2.TssKeyGenMsg) })
 	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })
-	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx, endChn) })
+	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx, endChn, resultChn) })
 
 	tssError := k.Party.Start()
 	if tssError != nil {
@@ -132,19 +132,22 @@ func (k *Keygen) StartParams(readyPeers []peer.ID) []byte {
 }
 
 // processEndMessage waits for the final message with generated key share and stores it locally.
-func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) error {
+func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData, resultChn chan interface{}) error {
 	defer k.Cancel()
 	for {
 		select {
 		case key := <-endChn:
 			{
-				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
+				address := crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA())
+				k.Log.Info().Msgf("Generated key share for address: %s", address)
 
 				keyshare := keyshare.NewECDSAKeyshare(key, k.threshold, k.Peers)
 				err := k.storer.StoreKeyshare(keyshare)
 				if err != nil {
 					return err
 				}
+
+				resultChn <- address.String()
 
 				return nil
 			}

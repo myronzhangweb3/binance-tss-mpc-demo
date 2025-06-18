@@ -23,7 +23,6 @@ import (
 	"tss-demo/tss_util/tss"
 	"tss-demo/tss_util/tss_config"
 
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -92,8 +91,6 @@ func Run() error {
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 
-	keyshareStore := keyshare.NewECDSAKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
-
 	// wait until executions are done and then stop further executions before exiting
 	exitLock := &sync.RWMutex{}
 	defer exitLock.Lock()
@@ -119,8 +116,8 @@ func Run() error {
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
 
 	l := log.With().Str("chain", fmt.Sprintf("%v", "name"))
-	KeygenEventHandler = event_handlers.NewKeygenEventHandler(l, coordinator, host, communication, keyshareStore, networkTopology.Threshold)
-	SignEventHandler = event_handlers.NewSignEventHandler(l, coordinator, host, communication, keyshareStore)
+	KeygenEventHandler = event_handlers.NewKeygenEventHandler(l, coordinator, host, communication, keyshare.NewECDSAKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath), networkTopology.Threshold)
+	SignEventHandler = event_handlers.NewSignEventHandler(l, coordinator, host, communication, configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
@@ -131,13 +128,6 @@ func Run() error {
 
 	relayerName := viper.GetString("name")
 	log.Info().Msgf("Started relayer: %s with PID: %s. Version: v%s", relayerName, host.ID().Pretty(), Version)
-
-	key, err := keyshareStore.GetKeyshare()
-	if err != nil {
-		log.Info().Msg("Relayer not part of MPC. Waiting for refresh event...")
-	} else {
-		log.Info().Msgf("MPC key address: %s", ethcrypto.PubkeyToAddress(*key.Key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
-	}
 
 	sig := <-sysErr
 	log.Info().Msgf("terminating got ` [%v] signal", sig)

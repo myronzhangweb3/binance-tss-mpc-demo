@@ -33,7 +33,7 @@ func (s *Server) InitTssDemoApiRouter() {
 	userInfo := v1.Group("/")
 
 	userInfo.GET("genkey", func(ctx *gin.Context) {
-		err := service.KeygenEventHandler.HandleEvents()
+		result, err := service.KeygenEventHandler.HandleEvents()
 		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code":    500,
@@ -44,7 +44,7 @@ func (s *Server) InitTssDemoApiRouter() {
 
 		ctx.JSON(200, gin.H{
 			"code":    200,
-			"result":  "result",
+			"result":  result,
 			"message": "success",
 		})
 	})
@@ -59,7 +59,7 @@ func (s *Server) InitTssDemoApiRouter() {
 			})
 			return
 		}
-		result, err := service.SignEventHandler.HandleEvents(params.Hash)
+		result, err := service.SignEventHandler.HandleEvents(params.Address, params.Hash)
 		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code":    500,

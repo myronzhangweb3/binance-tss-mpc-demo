@@ -1,5 +1,6 @@
 package routers
 
 type SignRequest struct {
-	Hash string `json:"hash" binding:"required"`
+	Address string `json:"address" binding:"required"`
+	Hash    string `json:"hash" binding:"required"`
 }

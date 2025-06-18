@@ -16,6 +16,7 @@ import (
 )
 
 type KeygenEventHandler struct {
+	ctx           context.Context
 	log           zerolog.Logger
 	coordinator   *tss.Coordinator
 	host          host.Host
@@ -34,6 +35,7 @@ func NewKeygenEventHandler(
 	threshold int,
 ) *KeygenEventHandler {
 	return &KeygenEventHandler{
+		ctx:           context.Background(),
 		log:           logC.Logger(),
 		coordinator:   coordinator,
 		host:          host,
@@ -43,21 +45,35 @@ func NewKeygenEventHandler(
 	}
 }
 
-func (eh *KeygenEventHandler) HandleEvents() error {
+func (eh *KeygenEventHandler) HandleEvents() (string, error) {
 	eh.log.Info().Msgf("Resolved keygen message")
 
 	key, err := eh.storer.GetKeyshare()
 	if (key.Threshold != 0) && (err == nil) {
 		eh.log.Info().Msgf("Already resolved keygen message")
-		return nil
+		return "", nil
 	}
 
 	keygen := keygen.NewKeygen(eh.sessionID(), eh.threshold, eh.host, eh.communication, eh.storer)
-	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{keygen}, make(chan interface{}, 1))
+	resultChn := make(chan interface{}, 1)
+	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{keygen}, resultChn)
 	if err != nil {
 		log.Err(err).Msgf("Failed executing keygen")
 	}
-	return nil
+
+	for {
+		select {
+		case res := <-resultChn:
+			{
+				eh.log.Info().Msgf("Successfully generated keyshare. address: %s", res)
+				return res.(string), nil
+			}
+		case <-eh.ctx.Done():
+			{
+				return "", fmt.Errorf("keygen process shutdown")
+			}
+		}
+	}
 }
 
 func (eh *KeygenEventHandler) sessionID() string {
