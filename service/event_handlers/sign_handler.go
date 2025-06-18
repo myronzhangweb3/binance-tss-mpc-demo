@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/binance-chain/tss-lib/common"
+	common2 "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog"
@@ -47,8 +48,11 @@ func (eh *SignEventHandler) HandleEvents(addr string, hash string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	log.Info().Msgf("HandleEvents MPC key address: %s", ethcrypto.PubkeyToAddress(*key.Key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
-
+	address := ethcrypto.PubkeyToAddress(*key.Key.ECDSAPub.ToBtcecPubKey().ToECDSA())
+	log.Info().Msgf("HandleEvents MPC key address: %s", address)
+	if common2.HexToAddress(addr) != address {
+		return "", fmt.Errorf("address mismatch")
+	}
 	msg := big.NewInt(0)
 	hashByte, err := hex.DecodeString(hash)
 	if err != nil {
@@ -56,7 +60,7 @@ func (eh *SignEventHandler) HandleEvents(addr string, hash string) (string, erro
 		return "", err
 	}
 	msg.SetBytes(hashByte)
-	sign, err := signing.NewSigning(msg, fmt.Sprintf("msgid-sign-%s", hash), eh.sessionID(hash), eh.host, eh.communication, keyshareStore)
+	sign, err := signing.NewSigning(msg, fmt.Sprintf("msgid-sign-%s", hash), eh.sessionID(addr, hash), eh.host, eh.communication, keyshareStore)
 	if err != nil {
 		log.Err(err).Msgf("Failed executing sign")
 		return "", err
@@ -86,6 +90,6 @@ func (eh *SignEventHandler) HandleEvents(addr string, hash string) (string, erro
 	}
 }
 
-func (eh *SignEventHandler) sessionID(rlp string) string {
-	return fmt.Sprintf("sid-sign-%s", rlp)
+func (eh *SignEventHandler) sessionID(addr string, rlp string) string {
+	return fmt.Sprintf("sid-sign-%s-%s", addr, rlp)
 }

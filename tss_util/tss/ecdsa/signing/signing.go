@@ -195,11 +195,7 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.S
 			{
 				s.Log.Info().Msg("Successfully generated signature")
 
-				if s.coordinator {
-					s.resultChn <- &sig
-				} else {
-					s.resultChn <- nil
-				}
+				s.resultChn <- &sig
 
 				return nil
 			}
