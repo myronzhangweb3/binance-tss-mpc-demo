@@ -47,11 +47,6 @@ For a deeper understanding of the implementation, refer to the [Thorchain v3.7.0
 
 ## Getting Started
 
-### Generate P2P Private Key
-
-[Generate Peer Private Key](https://github.com/myronzhangweb3/binance-tss-demo/blob/cbc42d77af3909b9ba8a82453234b4d10928bbab/cli/generateKey_test.go#L8)
-
-
 ### Start Server
 To run the TSS Demo Project, execute the following commands in your terminal:
 
