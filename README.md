@@ -64,9 +64,13 @@ TSS_CONFIG=config3.json NAME=p3 PORT=8003 go run cmd/server/main.go
 ### Generate Key
 
 ```bash
-curl --location --request GET 'http://127.0.0.1:8001/api/v1/genkey/test1' &
-curl --location --request GET 'http://127.0.0.1:8002/api/v1/genkey/test1' &
-curl --location --request GET 'http://127.0.0.1:8003/api/v1/genkey/test1' &
+curl --location --request GET 'http://127.0.0.1:8001/api/v1/genkey/test2' &
+curl --location --request GET 'http://127.0.0.1:8002/api/v1/genkey/test2' &
+curl --location --request GET 'http://127.0.0.1:8003/api/v1/genkey/test2' &
+```
+
+```bash
+curl --location --request GET 'http://127.0.0.1:8001/api/v1/deriving/0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7/key1'
 ```
 
 ### Generate RLP
@@ -80,7 +84,7 @@ curl --location --request POST 'http://127.0.0.1:8001/api/v1/sign' \
 --header 'Accept: */*' \
 --header 'Connection: keep-alive' \
 --data-raw '{
-  "address": "0xB7075A4fEFA0cAf47296B6986947aDa23ccA1fBa",
+  "address": "0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7",
   "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
 }' &
 
@@ -89,7 +93,7 @@ curl --location --request POST 'http://127.0.0.1:8002/api/v1/sign' \
 --header 'Accept: */*' \
 --header 'Connection: keep-alive' \
 --data-raw '{
-  "address": "0xB7075A4fEFA0cAf47296B6986947aDa23ccA1fBa",
+  "address": "0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7",
   "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
 }' &
 
@@ -98,7 +102,7 @@ curl --location --request POST 'http://127.0.0.1:8003/api/v1/sign' \
 --header 'Accept: */*' \
 --header 'Connection: keep-alive' \
 --data-raw '{
-  "address": "0xB7075A4fEFA0cAf47296B6986947aDa23ccA1fBa",
+  "address": "0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7",
   "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
 }' &
 ```

@@ -1,10 +1,18 @@
 package routers
 
 import (
+	"crypto/elliptic"
 	"fmt"
+	tsslibbig "github.com/binance-chain/tss-lib/common/int"
+	"github.com/binance-chain/tss-lib/crypto"
+	"github.com/binance-chain/tss-lib/crypto/ckd"
+	"github.com/btcsuite/btcd/chaincfg"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
+	"math/big"
 	"tss-demo/logging"
 	"tss-demo/service"
+	"tss-demo/tss_util/keyshare"
 )
 
 type Server struct {
@@ -49,6 +57,40 @@ func (s *Server) InitTssDemoApiRouter() {
 			"message": "success",
 		})
 	})
+	// TODO check
+	userInfo.GET("deriving/:root/:path", func(ctx *gin.Context) {
+		root := ctx.Param("root")
+		path := ctx.Param("path")
+
+		keyshareStore := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("keyshare/key1-%s.keyshare", root))
+
+		keys, err := keyshareStore.GetKeyshare()
+		if err != nil {
+			ctx.JSON(200, gin.H{
+				"code":    500,
+				"message": fmt.Sprintf("Failed executing keygen. error: %v", err),
+			})
+			return
+		}
+		il, extendedChildPk, errorDerivation := derivingPubkeyFromPath(keys.Key.ECDSAPub, []byte(path), []uint32{12, 209, 3}, keys.Key.ECDSAPub.Curve())
+		if errorDerivation != nil {
+			ctx.JSON(200, gin.H{
+				"code":    500,
+				"message": fmt.Sprintf("Failed executing keygen. error: %v", errorDerivation),
+			})
+			return
+		}
+		address := ethcrypto.PubkeyToAddress(*extendedChildPk.PublicKey.ToECDSA())
+
+		ctx.JSON(200, gin.H{
+			"code": 200,
+			"result": map[string]interface{}{
+				"address": address,
+				"il":      il,
+			},
+			"message": "success",
+		})
+	})
 	userInfo.POST("sign", func(ctx *gin.Context) {
 		params := &SignRequest{}
 		if err := ctx.ShouldBindBodyWithJSON(params); err != nil {
@@ -80,4 +122,19 @@ func (s *Server) InitTssDemoApiRouter() {
 func (s *Server) Run(addr string) error {
 
 	return s.engine.Run(addr)
+}
+
+func derivingPubkeyFromPath(masterPub *crypto.ECPoint, chainCode []byte, path []uint32, ec elliptic.Curve) (*big.Int, *ckd.ExtendedKey, error) {
+	// build ecdsa key pair
+	pk := masterPub.ToBtcecPubKey()
+	net := &chaincfg.MainNetParams
+	extendedParentPk := &ckd.ExtendedKey{
+		PublicKey:  pk,
+		Depth:      0,
+		ChildIndex: 0,
+		ChainCode:  chainCode[:],
+		ParentFP:   []byte{0x00, 0x00, 0x00, 0x00},
+		Version:    net.HDPrivateKeyID[:],
+	}
+	return ckd.DeriveChildKeyFromHierarchy(path, extendedParentPk, tsslibbig.Wrap(ec.Params().N), ec)
 }
