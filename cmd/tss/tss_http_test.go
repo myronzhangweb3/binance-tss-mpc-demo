@@ -11,7 +11,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/keygen"
+	"binance-tss-mpc-server/tss/go-tss/keygen"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -39,7 +39,7 @@ func (TssHttpServerTestSuite) TestNewTssHttpServer(c *C) {
 
 func (TssHttpServerTestSuite) TestPingHandler(c *C) {
 	tssServer := &MockTssServer{}
-	s := NewTssHttpServer("127.0.0.1:8080", tssServer)
+	s := NewTssHttpServer("127.0.0.1:8081", tssServer)
 	c.Assert(s, NotNil)
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 	res := httptest.NewRecorder()
@@ -49,7 +49,7 @@ func (TssHttpServerTestSuite) TestPingHandler(c *C) {
 
 func (TssHttpServerTestSuite) TestGetP2pIDHandler(c *C) {
 	tssServer := &MockTssServer{}
-	s := NewTssHttpServer("127.0.0.1:8080", tssServer)
+	s := NewTssHttpServer("127.0.0.1:8081", tssServer)
 	c.Assert(s, NotNil)
 	req := httptest.NewRequest(http.MethodGet, "/p2pid", nil)
 	res := httptest.NewRecorder()

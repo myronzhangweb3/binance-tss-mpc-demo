@@ -3,12 +3,12 @@ package main
 import (
 	"errors"
 
-	"gitlab.com/thorchain/thornode/v3/bifrost/p2p/conversion"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/blame"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/common"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/keygen"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/keysign"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/tss"
+	"binance-tss-mpc-server/p2p/conversion"
+	"binance-tss-mpc-server/tss/go-tss/blame"
+	"binance-tss-mpc-server/tss/go-tss/common"
+	"binance-tss-mpc-server/tss/go-tss/keygen"
+	"binance-tss-mpc-server/tss/go-tss/keysign"
+	"binance-tss-mpc-server/tss/go-tss/tss"
 )
 
 type MockTssServer struct {
@@ -46,6 +46,6 @@ func (mts *MockTssServer) KeySign(req keysign.Request) (keysign.Response, error)
 	if mts.failToKeySign {
 		return keysign.Response{}, errors.New("you ask for it")
 	}
-	newSig := keysign.NewSignature("", "", "", "")
+	newSig := keysign.NewSignature("", "", "", "", "")
 	return keysign.NewResponse([]keysign.Signature{newSig}, common.Success, blame.Blame{}), nil
 }

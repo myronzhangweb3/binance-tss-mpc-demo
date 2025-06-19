@@ -55,58 +55,33 @@ For a deeper understanding of the implementation, refer to the [Sygma Relayer v2
 ### Start Server
 To run the TSS Demo Project, execute the following commands in your terminal:
 
+
 ```bash
-TSS_CONFIG=config1.json NAME=p1 PORT=8001 go run cmd/server/main.go
-TSS_CONFIG=config2.json NAME=p2 PORT=8002 go run cmd/server/main.go
-TSS_CONFIG=config3.json NAME=p3 PORT=8003 go run cmd/server/main.go
+# thorpub1addwnpepq07lfyrczz5ltk2x9gdwp8lwuk4jqhfj0x9sllxr09zzqg0cf3dm78wtzae
+go run cmd/tss-recovery/main.go --tss-port 127.0.0.1:8081 --pretty-log --p2p-port 6671 --home ./data/node1 --peer /ip4/127.0.0.1/tcp/6672/p2p/16Uiu2HAmPLe7Mzm8TsYUubgCAW1aJoeFScxrLj8ppHFivPo97bUZ --peer /ip4/127.0.0.1/tcp/6673/p2p/16Uiu2HAm7JvHh9HhWUy3sVBYzPcVJTmDFbGxQ1dnBWgCRzfN1TXM
+# node secret key: NmI4NmIyNzNmZjM0ZmNlMTlkNmI4MDRlZmY1YTNmNTc0N2FkYTRlYWEyMmYxZDQ5YzAxZTUyZGRiNzg3NWI0Yg==
+
+# thorpub1addwnpepqw0t6d6waga7lh05dwa3st3fr7m3nmsmwpdsk7qzzcgr36ma4zsrvlg06u0
+go run cmd/tss-recovery/main.go --tss-port 127.0.0.1:8082 --pretty-log --p2p-port 6672 --home ./data/node2 --peer /ip4/127.0.0.1/tcp/6671/p2p/16Uiu2HAmVkKntsECaYfefR1V2yCR79CegLATuTPE6B9TxgxBiiiA --peer /ip4/127.0.0.1/tcp/6673/p2p/16Uiu2HAm7JvHh9HhWUy3sVBYzPcVJTmDFbGxQ1dnBWgCRzfN1TXM
+# node secret key: ZDQ3MzVlM2EyNjVlMTZlZWUwM2Y1OTcxOGI5YjVkMDMwMTljMDdkOGI2YzUxZjkwZGEzYTY2NmVlYzEzYWIzNQ==
+
+# thorpub1addwnpepq2cfzken8ynd2vuv4kaxzstyexd7sdvj5y7chhktdanety7prduasxq3caf
+go run cmd/tss-recovery/main.go --tss-port 127.0.0.1:8083 --pretty-log --p2p-port 6673 --home ./data/node3 --peer /ip4/127.0.0.1/tcp/6671/p2p/16Uiu2HAmVkKntsECaYfefR1V2yCR79CegLATuTPE6B9TxgxBiiiA --peer /ip4/127.0.0.1/tcp/6672/p2p/16Uiu2HAmPLe7Mzm8TsYUubgCAW1aJoeFScxrLj8ppHFivPo97bUZ 
+# node secret key: NGUwNzQwODU2MmJlZGI4YjYwY2UwNWMxZGVjZmUzYWQxNmI3MjIzMDk2N2RlMDFmNjQwYjdlNDcyOWI0OWZjZQ==
+
 ```
 
 ### Generate Key
 
 ```bash
-curl --location --request GET 'http://127.0.0.1:8001/api/v1/genkey/test2' &
-curl --location --request GET 'http://127.0.0.1:8002/api/v1/genkey/test2' &
-curl --location --request GET 'http://127.0.0.1:8003/api/v1/genkey/test2' &
+sh ./keygen.sh
 ```
 
 ```bash
 curl --location --request GET 'http://127.0.0.1:8001/api/v1/deriving/0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7/key1'
 ```
 
-### Generate RLP
-
-[Generate Rlp](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L10)
-
 ###  Sign
 ```bash
-curl --location --request POST 'http://127.0.0.1:8001/api/v1/sign' \
---header 'Content-Type: application/json' \
---header 'Accept: */*' \
---header 'Connection: keep-alive' \
---data-raw '{
-  "address": "0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7",
-  "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
-}' &
-
-curl --location --request POST 'http://127.0.0.1:8002/api/v1/sign' \
---header 'Content-Type: application/json' \
---header 'Accept: */*' \
---header 'Connection: keep-alive' \
---data-raw '{
-  "address": "0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7",
-  "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
-}' &
-
-curl --location --request POST 'http://127.0.0.1:8003/api/v1/sign' \
---header 'Content-Type: application/json' \
---header 'Accept: */*' \
---header 'Connection: keep-alive' \
---data-raw '{
-  "address": "0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7",
-  "hash": "b07e3536cce658dc1615e6e43ee0af85ddeef27de5b237d806a8296f83fec261"
-}' &
+sh ./keysign.sh
 ```
-
-### Broadcast
-
-[Generate Broadcast Tx](https://github.com/myronzhangweb3/binance-tss-demo/blob/930fcc797c283f43400907d6cb3966a8f25b277b/test/tx_build/sign_test.go#L35)

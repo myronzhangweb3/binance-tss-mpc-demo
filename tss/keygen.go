@@ -1,146 +1,157 @@
 package tss
 
 import (
+	"fmt"
+	"net/http"
+	"sort"
+	"strings"
 	"time"
 
-	"gitlab.com/thorchain/thornode/v3/bifrost/p2p/conversion"
-	"gitlab.com/thorchain/thornode/v3/bifrost/p2p/messages"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/blame"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/common"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/keygen"
+	"binance-tss-mpc-server/tss/go-tss/keygen"
+	"binance-tss-mpc-server/tss/go-tss/tss"
+	"github.com/blang/semver"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
+	"binance-tss-mpc-server/common"
+	"binance-tss-mpc-server/common/cosmos"
+	"binance-tss-mpc-server/constants"
+	"binance-tss-mpc-server/thorclient"
+	"binance-tss-mpc-server/x/thorchain/types"
 )
 
-func (t *TssServer) Keygen(req keygen.Request) (keygen.Response, error) {
-	t.tssKeyGenLocker.Lock()
-	defer t.tssKeyGenLocker.Unlock()
-	status := common.Success
-	msgID, err := t.requestToMsgId(req)
+// KeyGen is
+type KeyGen struct {
+	keys           *thorclient.Keys
+	logger         zerolog.Logger
+	client         *http.Client
+	server         *tss.TssServer
+	bridge         thorclient.ThorchainBridge
+	currentVersion semver.Version
+	lastCheck      time.Time
+}
+
+// NewTssKeyGen create a new instance of TssKeyGen which will look after TSS key stuff
+func NewTssKeyGen(keys *thorclient.Keys, server *tss.TssServer, bridge thorclient.ThorchainBridge) (*KeyGen, error) {
+	if keys == nil {
+		return nil, fmt.Errorf("keys is nil")
+	}
+	return &KeyGen{
+		keys:   keys,
+		logger: log.With().Str("module", "tss_keygen").Logger(),
+		client: &http.Client{
+			Timeout: time.Second * 130,
+		},
+		server: server,
+		bridge: bridge,
+	}, nil
+}
+
+func (kg *KeyGen) getVersion() semver.Version {
+	requestTime := time.Now()
+	if !kg.currentVersion.Equals(semver.Version{}) && requestTime.Sub(kg.lastCheck).Seconds() < constants.ThorchainBlockTime.Seconds() {
+		return kg.currentVersion
+	}
+	version, err := kg.bridge.GetThorchainVersion()
 	if err != nil {
-		return keygen.Response{}, err
+		kg.logger.Err(err).Msg("fail to get current thorchain version")
+		return kg.currentVersion
+	}
+	kg.currentVersion = version
+	kg.lastCheck = requestTime
+	return kg.currentVersion
+}
+
+func (kg *KeyGen) GenerateNewKey(keygenBlockHeight int64, pKeys common.PubKeys) (pk common.PubKeySet, blame types.Blame, err error) {
+	// No need to do key gen
+	if len(pKeys) == 0 {
+		return common.EmptyPubKeySet, types.Blame{}, nil
 	}
 
-	keygenInstance := keygen.NewTssKeyGen(
-		t.p2pCommunication.GetLocalPeerID(),
-		t.conf,
-		t.localNodePubKey,
-		t.p2pCommunication.BroadcastMsgChan,
-		t.stopChan,
-		t.preParams,
-		msgID,
-		t.stateManager,
-		t.privateKey,
-		t.p2pCommunication)
-
-	keygenMsgChannel := keygenInstance.GetTssKeyGenChannels()
-	t.p2pCommunication.SetSubscribe(messages.TSSKeyGenMsg, msgID, keygenMsgChannel)
-	t.p2pCommunication.SetSubscribe(messages.TSSKeyGenVerMsg, msgID, keygenMsgChannel)
-	t.p2pCommunication.SetSubscribe(messages.TSSControlMsg, msgID, keygenMsgChannel)
-	t.p2pCommunication.SetSubscribe(messages.TSSTaskDone, msgID, keygenMsgChannel)
-
+	// add some logging
 	defer func() {
-		t.p2pCommunication.CancelSubscribe(messages.TSSKeyGenMsg, msgID)
-		t.p2pCommunication.CancelSubscribe(messages.TSSKeyGenVerMsg, msgID)
-		t.p2pCommunication.CancelSubscribe(messages.TSSControlMsg, msgID)
-		t.p2pCommunication.CancelSubscribe(messages.TSSTaskDone, msgID)
-
-		t.p2pCommunication.ReleaseStream(msgID)
-		t.partyCoordinator.ReleaseStream(msgID)
+		if blame.IsEmpty() {
+			kg.logger.Info().Int64("height", keygenBlockHeight).Str("pubkey", pk.String()).Msg("tss keygen results success")
+		} else {
+			blames := make([]string, len(blame.BlameNodes))
+			for i := range blame.BlameNodes {
+				var pk common.PubKey
+				pk, err = common.NewPubKey(blame.BlameNodes[i].Pubkey)
+				if err != nil {
+					kg.logger.Error().Err(err).Int64("height", keygenBlockHeight).Str("pubkey", blame.BlameNodes[i].Pubkey).Msg("tss keygen results error")
+					continue
+				}
+				var acc cosmos.AccAddress
+				acc, err = pk.GetThorAddress()
+				if err != nil {
+					kg.logger.Error().Err(err).Int64("height", keygenBlockHeight).Str("pubkey", pk.String()).Msg("tss keygen results error")
+					continue
+				}
+				blames[i] = acc.String()
+			}
+			sort.Strings(blames)
+			kg.logger.Info().Int64("height", keygenBlockHeight).Str("pubkey", pk.String()).Str("round", blame.Round).Str("blames", strings.Join(blames, ", ")).Str("reason", blame.FailReason).Msg("tss keygen results blame")
+		}
 	}()
-	sigChan := make(chan string)
-	blameMgr := keygenInstance.GetTssCommonStruct().GetBlameMgr()
-	joinPartyStartTime := time.Now()
-	onlinePeers, leader, errJoinParty := t.joinParty(msgID, req.Version, req.BlockHeight, req.Keys, len(req.Keys)-1, sigChan)
-	joinPartyTime := time.Since(joinPartyStartTime)
-	if errJoinParty != nil {
-		t.logger.Error().Err(errJoinParty).Msgf("failed to joinParty after %s, onlinePeers=%v", joinPartyTime, onlinePeers)
 
-		t.tssMetrics.KeygenJoinParty(joinPartyTime, false)
-		t.tssMetrics.UpdateKeyGen(0, false)
-		// this indicate we are processing the leaderless join party
-		if leader == "NONE" {
-			if onlinePeers == nil {
-				t.logger.Error().Err(err).Msg("error before we start join party")
-				return keygen.Response{
-					Status: common.Fail,
-					Blame:  blame.NewBlame(blame.InternalError, []blame.Node{}),
-				}, nil
-			}
-			blameNodes, err := blameMgr.NodeSyncBlame(req.Keys, onlinePeers)
-			if err != nil {
-				t.logger.Err(errJoinParty).Msg("fail to get peers to blame")
-			}
-			// make sure we blame the leader as well
-			t.logger.Error().Err(errJoinParty).Msgf("fail to form keygen party with online:%v", onlinePeers)
-			return keygen.Response{
-				Status: common.Fail,
-				Blame:  blameNodes,
-			}, nil
+	var keys []string
+	for _, item := range pKeys {
+		keys = append(keys, item.String())
+	}
+	keyGenReq := keygen.Request{
+		Keys: keys,
+	}
+	currentVersion := kg.getVersion()
+	keyGenReq.Version = currentVersion.String()
 
-		}
+	// Use the churn try's block to choose the same leader for every node in an Asgard,
+	// since a successful keygen requires every node in the Asgard to take part.
+	keyGenReq.LeaderSalt = keygenBlockHeight
 
-		var blameLeader blame.Blame
-		var blameNodes blame.Blame
-		blameNodes, err = blameMgr.NodeSyncBlame(req.Keys, onlinePeers)
-		if err != nil {
-			t.logger.Error().Err(err).Msg("failed to blame nodes for joinParty failure")
-		}
-		leaderPubKey, err := conversion.GetPubKeyFromPeerID(leader)
-		if err != nil {
-			t.logger.Error().Err(err).Msgf("failed to convert peerID->pubkey for leader %s", leader)
-			blameLeader = blame.NewBlame(blame.TssSyncFail, []blame.Node{})
-		} else {
-			blameLeader = blame.NewBlame(blame.TssSyncFail, []blame.Node{{Pubkey: leaderPubKey, BlameData: nil, BlameSignature: nil}})
-		}
+	ch := make(chan bool, 1)
+	defer close(ch)
+	timer := time.NewTimer(30 * time.Minute)
+	defer timer.Stop()
 
-		if len(onlinePeers) != 0 {
-			t.logger.Trace().Msgf("there were %d onlinePeers, adding leader to %d existing nodes blamed",
-				len(onlinePeers), len(blameNodes.BlameNodes))
-			blameNodes.AddBlameNodes(blameLeader.BlameNodes...)
-		} else {
-			t.logger.Trace().Msgf("there were %d onlinePeers, setting blame nodes to just the leader",
-				len(onlinePeers))
-			blameNodes = blameLeader
-		}
-		t.logger.Error().Err(errJoinParty).Msgf("fail to form keygen party with online:%v", onlinePeers)
+	var resp keygen.Response
+	go func() {
+		resp, err = kg.server.Keygen(keyGenReq)
+		ch <- true
+	}()
 
-		return keygen.Response{
-			Status: common.Fail,
-			Blame:  blameNodes,
-		}, nil
-
+	select {
+	case <-ch:
+		// do nothing
+	case <-timer.C:
+		panic("tss keygen timeout")
 	}
 
-	t.logger.Info().Msg("joinParty succeeded, keygen party formed")
-	t.notifyJoinPartyChan()
-	t.tssMetrics.KeygenJoinParty(joinPartyTime, true)
+	// copy blame to our own struct
+	blame = types.Blame{
+		FailReason: resp.Blame.FailReason,
+		IsUnicast:  resp.Blame.IsUnicast,
+		Round:      resp.Blame.Round,
+		BlameNodes: make([]types.Node, len(resp.Blame.BlameNodes)),
+	}
+	for i, n := range resp.Blame.BlameNodes {
+		blame.BlameNodes[i].Pubkey = n.Pubkey
+		blame.BlameNodes[i].BlameData = n.BlameData
+		blame.BlameNodes[i].BlameSignature = n.BlameSignature
+	}
 
-	// the statistic of keygen only care about Tss it self, even if the
-	// following http response aborts, it still counted as a successful keygen
-	// as the Tss model runs successfully.
-	beforeKeygen := time.Now()
-	k, err := keygenInstance.GenerateNewKey(req)
-	keygenTime := time.Since(beforeKeygen)
 	if err != nil {
-		t.tssMetrics.UpdateKeyGen(keygenTime, false)
-		blameNodes := *blameMgr.GetBlame()
-		t.logger.Error().Err(err).Msgf("failed to generate key, blaming: %+v", blameNodes.BlameNodes)
-		return keygen.NewResponse("", "", common.Fail, blameNodes), err
-	} else {
-		t.tssMetrics.UpdateKeyGen(keygenTime, true)
+		// the resp from kg.server.Keygen will not be nil
+		if blame.IsEmpty() {
+			blame.FailReason = err.Error()
+		}
+		return common.EmptyPubKeySet, blame, fmt.Errorf("fail to keygen,err:%w", err)
 	}
 
-	newPubKey, addr, err := conversion.GetTssPubKey(k)
+	cpk, err := common.NewPubKey(resp.PubKey)
 	if err != nil {
-		t.logger.Error().Err(err).Msg("failed to generate new tss pubkey from generated key")
-		status = common.Fail
+		return common.EmptyPubKeySet, blame, fmt.Errorf("fail to create common.PubKey,%w", err)
 	}
 
-	blameNodes := *blameMgr.GetBlame()
-	t.logger.Trace().Msgf("returning from keygen with status=%d, blaming=%+v", status, blameNodes.BlameNodes)
-	return keygen.NewResponse(
-		newPubKey,
-		addr.String(),
-		status,
-		blameNodes,
-	), nil
+	// TODO later on THORNode need to have both secp256k1 key and ed25519
+	return common.NewPubKeySet(cpk, cpk), blame, nil
 }

@@ -13,10 +13,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/input"
 	golog "github.com/ipfs/go-log"
 
-	"gitlab.com/thorchain/thornode/v3/bifrost/p2p"
-	"gitlab.com/thorchain/thornode/v3/bifrost/p2p/conversion"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/common"
-	"gitlab.com/thorchain/thornode/v3/bifrost/tss/go-tss/tss"
+	"binance-tss-mpc-server/p2p"
+	"binance-tss-mpc-server/p2p/conversion"
+	"binance-tss-mpc-server/tss/go-tss/common"
+	"binance-tss-mpc-server/tss/go-tss/tss"
 )
 
 var (
