@@ -1,6 +1,7 @@
 package main
 
 import (
+	"binance-tss-mpc-server/tss/go-tss/keyresharing"
 	"errors"
 
 	"binance-tss-mpc-server/p2p/conversion"
@@ -48,4 +49,11 @@ func (mts *MockTssServer) KeySign(req keysign.Request) (keysign.Response, error)
 	}
 	newSig := keysign.NewSignature("", "", "", "", "")
 	return keysign.NewResponse([]keysign.Signature{newSig}, common.Success, blame.Blame{}), nil
+}
+
+func (mts *MockTssServer) KeyResharing(req keyresharing.Request) (keyresharing.Response, error) {
+	if mts.failToKeyGen {
+		return keyresharing.Response{}, errors.New("you ask for it")
+	}
+	return keyresharing.NewResponse(conversion.GetRandomPubKey(), "whatever", common.Success, blame.Blame{}), nil
 }

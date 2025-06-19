@@ -1,6 +1,7 @@
 package main
 
 import (
+	"binance-tss-mpc-server/tss/go-tss/keyresharing"
 	"context"
 	"encoding/base64"
 	"encoding/hex"
@@ -46,6 +47,7 @@ func NewTssHttpServer(tssAddr string, t tss.Server) *TssHttpServer {
 func (t *TssHttpServer) tssNewHandler() http.Handler {
 	router := mux.NewRouter()
 	router.Handle("/keygen", http.HandlerFunc(t.keygenHandler)).Methods(http.MethodPost)
+	router.Handle("/keyresharing", http.HandlerFunc(t.keyResharingHandler)).Methods(http.MethodPost)
 	router.Handle("/keysign", http.HandlerFunc(t.keySignHandler)).Methods(http.MethodPost)
 	router.Handle("/ping", http.HandlerFunc(t.pingHandler)).Methods(http.MethodGet)
 	router.Handle("/p2pid", http.HandlerFunc(t.getP2pIDHandler)).Methods(http.MethodGet)
@@ -77,6 +79,42 @@ func (t *TssHttpServer) keygenHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := t.tssServer.Keygen(keygenReq)
 	if err != nil {
 		t.logger.Error().Err(err).Msg("fail to key gen")
+	}
+	t.logger.Debug().Msgf("resp:%+v", resp)
+	buf, err := json.Marshal(resp)
+	if err != nil {
+		t.logger.Error().Err(err).Msg("fail to marshal response to json")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write(buf)
+	if err != nil {
+		t.logger.Error().Err(err).Msg("fail to write to response")
+	}
+}
+
+func (t *TssHttpServer) keyResharingHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	defer func() {
+		if err := r.Body.Close(); nil != err {
+			t.logger.Error().Err(err).Msg("fail to close request body")
+		}
+	}()
+	t.logger.Info().Msg("receive key resharing request")
+	decoder := json.NewDecoder(r.Body)
+	var keygenReq keyresharing.Request
+	if err := decoder.Decode(&keygenReq); nil != err {
+		t.logger.Error().Err(err).Msg("fail to decode key resharing request")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	resp, err := t.tssServer.KeyResharing(keygenReq)
+	if err != nil {
+		t.logger.Error().Err(err).Msg("fail to key resharing")
 	}
 	t.logger.Debug().Msgf("resp:%+v", resp)
 	buf, err := json.Marshal(resp)

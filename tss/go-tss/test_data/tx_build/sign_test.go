@@ -84,7 +84,7 @@ func TestGetBroadcastTx(t *testing.T) {
 		log.Fatalf("Failed to unmarshal public key: %v", err)
 	}
 	address := crypto.PubkeyToAddress(*pk)
-	fmt.Printf("Recovered Ethereum Address: %s\n", address.Hex())
+	fmt.Printf("Recovered Ethereum PoolPubKey: %s\n", address.Hex())
 
 	// tx: 0x02f86b83aa36a780835b4494835b4494825208949591bb8dabe3291377f2dd4c5f3fe71fde58957b8080c080a091e958618ef8f16ad26d59691fc31a8044b1c883cef44d143f5c468e97aaa26da02c8ecc4ec04981cc651fb8e821dd391d1f51248688cd70b24f689c0e1b502ca3
 	// success tx: https://sepolia.etherscan.io/tx/0x0539b51e4f9fad12d440228b7d79ae21a645b8214f1286c156b6e88bdec257ab

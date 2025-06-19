@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/binance-chain/tss-lib/ecdsa/resharing"
 	"io"
 	"math/big"
 	"os"
@@ -163,6 +164,42 @@ func GetMsgRound(msg []byte, partyID *btss.PartyID, isBroadcast bool) (blame.Rou
 		return blame.RoundInfo{
 			Index:    3,
 			RoundMsg: messages.KEYGEN3,
+		}, nil
+
+	case *resharing.DGRound1Message:
+		return blame.RoundInfo{
+			Index:    0,
+			RoundMsg: messages.DGRound1,
+		}, nil
+
+	case *resharing.DGRound2Message1:
+		return blame.RoundInfo{
+			Index:    1,
+			RoundMsg: messages.DGRound2a,
+		}, nil
+
+	case *resharing.DGRound2Message2:
+		return blame.RoundInfo{
+			Index:    2,
+			RoundMsg: messages.DGRound2b,
+		}, nil
+
+	case *resharing.DGRound3Message1:
+		return blame.RoundInfo{
+			Index:    3,
+			RoundMsg: messages.DGRound3a,
+		}, nil
+
+	case *resharing.DGRound3Message2:
+		return blame.RoundInfo{
+			Index:    4,
+			RoundMsg: messages.DGRound3b,
+		}, nil
+
+	case *resharing.DGRound4Message:
+		return blame.RoundInfo{
+			Index:    5,
+			RoundMsg: messages.DGRound4,
 		}, nil
 
 	case *signing.SignRound1Message1:

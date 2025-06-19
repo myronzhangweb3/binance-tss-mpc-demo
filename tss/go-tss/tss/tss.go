@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"binance-tss-mpc-server/tss/go-tss/keyresharing"
 	"errors"
 	"fmt"
 	"sort"
@@ -141,6 +142,9 @@ func (t *TssServer) requestToMsgId(request interface{}) (string, error) {
 	var keys []string
 	switch value := request.(type) {
 	case keygen.Request:
+		keys = value.Keys
+	case keyresharing.Request:
+		dat = []byte(value.PoolPubKey)
 		keys = value.Keys
 	case keysign.Request:
 		sort.Strings(value.Messages)
