@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"net/http"
 	"time"
 
@@ -46,6 +49,7 @@ func (t *TssHttpServer) tssNewHandler() http.Handler {
 	router.Handle("/keysign", http.HandlerFunc(t.keySignHandler)).Methods(http.MethodPost)
 	router.Handle("/ping", http.HandlerFunc(t.pingHandler)).Methods(http.MethodGet)
 	router.Handle("/p2pid", http.HandlerFunc(t.getP2pIDHandler)).Methods(http.MethodGet)
+	router.Handle("/p2pgen", http.HandlerFunc(t.p2pIDHandler)).Methods(http.MethodGet)
 	router.Handle("/metrics", promhttp.Handler())
 	router.Use(logMiddleware())
 	return router
@@ -124,6 +128,51 @@ func (t *TssHttpServer) keySignHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		t.logger.Error().Err(err).Msg("fail to write response")
 	}
+}
+
+func (t *TssHttpServer) p2pIDHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	defer func() {
+		if err := r.Body.Close(); nil != err {
+			t.logger.Error().Err(err).Msg("fail to close request body")
+		}
+	}()
+	t.logger.Info().Msg("receive p2p gen request")
+
+	priv, pub, err := crypto.GenerateKeyPair(crypto.RSA, 2048)
+	if err != nil {
+		t.logger.Error().Err(err).Msg("fail to GenerateKeyPair")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	peerID, err := peer.IDFromPublicKey(pub)
+	if err != nil {
+		t.logger.Error().Err(err).Msg("fail to IDFromPublicKey")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	marshPriv, err := crypto.MarshalPrivateKey(priv)
+	if err != nil {
+		t.logger.Error().Err(err).Msg("fail to MarshalPrivateKey")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	encPriv := base64.StdEncoding.EncodeToString(marshPriv)
+
+	w.Write([]byte(fmt.Sprintf(`
+LibP2P peer identity: %s \n
+LibP2P private key: %s
+`,
+		peerID.Pretty(),
+		encPriv,
+	)))
+
+	return
 }
 
 func (t *TssHttpServer) Start() error {

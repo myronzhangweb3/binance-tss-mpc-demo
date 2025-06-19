@@ -39,11 +39,11 @@ flowchart TD
 ## Related Technologies
 
 - [TSS Library](https://github.com/binance-chain/tss-lib): A library that provides the core functionalities for implementing threshold signature schemes.
-- [Sygma Core](https://github.com/sygmaprotocol/sygma-core): A protocol that facilitates cross-chain communication and interoperability.
+- [Thorchain](https://gitlab.com/thorchain/thornode/-/tree/v3.7.0/bifrost/tss/go-tss?ref_type=tags)
 
 ## Code Reference
 
-For a deeper understanding of the implementation, refer to the [Sygma Relayer v2.6.1](https://github.com/sprintertech/sygma-relayer/tree/v2.6.1) repository, which provides additional context and examples.
+For a deeper understanding of the implementation, refer to the [Thorchain v3.7.0](https://gitlab.com/thorchain/thornode/-/tree/v3.7.0/bifrost/tss/go-tss?ref_type=tag) repository, which provides additional context and examples.
 
 ## Getting Started
 
