@@ -34,8 +34,8 @@ func sendRequest(url, method, jsonData string) (string, error) {
 	return string(body), nil
 }
 
-func TestP2pGen(t *testing.T) {
-	response, err := sendRequest("http://127.0.0.1:8081/p2pgen", http.MethodGet, "")
+func TestNodeKeyGen(t *testing.T) {
+	response, err := sendRequest("http://127.0.0.1:8081/nodekey", http.MethodGet, "")
 	if err != nil {
 		t.Fatal(err)
 	}
