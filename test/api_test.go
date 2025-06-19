@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"bytes"
@@ -58,7 +58,7 @@ func TestKeyGen(t *testing.T) {
 		"http://127.0.0.1:8083/keygen",
 	}
 
-	startTime := time.Now() // 开始计时
+	startTime := time.Now()
 	wg := sync.WaitGroup{}
 	for i := range urls {
 		wg.Add(1)
@@ -95,7 +95,7 @@ func TestKeySign(t *testing.T) {
 		"http://127.0.0.1:8083/keysign",
 	}
 
-	startTime := time.Now() // 开始计时
+	startTime := time.Now()
 	wg := sync.WaitGroup{}
 	for i := range urls {
 		wg.Add(1)

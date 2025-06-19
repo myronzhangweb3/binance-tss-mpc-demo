@@ -1,10 +1,10 @@
-# Binance TSS Demo Project
+# Binance TSS Project
 
 This project serves as a demonstration for Threshold Signature Scheme (TSS).
 
 ## Overview
 
-The TSS Demo Project is designed to showcase the implementation and functionality of threshold signature schemes, which are crucial for enhancing security in distributed systems. This project leverages key technologies and libraries to provide a robust demonstration of TSS capabilities.
+The TSS Project is designed to showcase the implementation and functionality of threshold signature schemes, which are crucial for enhancing security in distributed systems. This project leverages key technologies and libraries to provide a robust demonstration of TSS capabilities.
 
 ```mermaid
 flowchart TD
@@ -68,7 +68,7 @@ go run cmd/tss-recovery/main.go --tss-port 127.0.0.1:8083 --pretty-log --p2p-por
 
 ### Generate Key
 
-[api_test.go](cmd/tss/api_test.go)
+[api_test.go](test/api_test.go)
 
 ```bash
 curl --location --request GET 'http://127.0.0.1:8001/api/v1/deriving/0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7/key1'
@@ -76,5 +76,5 @@ curl --location --request GET 'http://127.0.0.1:8001/api/v1/deriving/0x3D3A3B117
 
 ###  Sign
 
-[api_test.go](cmd/tss/api_test.go)
+[api_test.go](test/api_test.go)
 
