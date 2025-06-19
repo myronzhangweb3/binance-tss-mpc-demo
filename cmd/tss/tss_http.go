@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -46,6 +49,7 @@ func (t *TssHttpServer) tssNewHandler() http.Handler {
 	router.Handle("/keysign", http.HandlerFunc(t.keySignHandler)).Methods(http.MethodPost)
 	router.Handle("/ping", http.HandlerFunc(t.pingHandler)).Methods(http.MethodGet)
 	router.Handle("/p2pid", http.HandlerFunc(t.getP2pIDHandler)).Methods(http.MethodGet)
+	router.Handle("/nodekey", http.HandlerFunc(t.nodeKeyHandler)).Methods(http.MethodGet)
 	router.Handle("/metrics", promhttp.Handler())
 	router.Use(logMiddleware())
 	return router
@@ -124,6 +128,26 @@ func (t *TssHttpServer) keySignHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		t.logger.Error().Err(err).Msg("fail to write response")
 	}
+}
+
+func (t *TssHttpServer) nodeKeyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	defer func() {
+		if err := r.Body.Close(); nil != err {
+			t.logger.Error().Err(err).Msg("fail to close request body")
+		}
+	}()
+	t.logger.Info().Msg("receive node secret key request")
+
+	randomBytes := make([]byte, 32)
+	rand.Read(randomBytes)
+	priHexBytes := base64.StdEncoding.EncodeToString([]byte(hex.EncodeToString(randomBytes)))
+	w.Write([]byte(priHexBytes))
+
+	return
 }
 
 func (t *TssHttpServer) Start() error {

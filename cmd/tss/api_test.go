@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-func sendPostRequest(url, jsonData string) (string, error) {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
+func sendRequest(url, method, jsonData string) (string, error) {
+	req, err := http.NewRequest(method, url, bytes.NewBuffer([]byte(jsonData)))
 	if err != nil {
 		return "", fmt.Errorf("fail to send post request: %w", err)
 	}
@@ -32,6 +32,14 @@ func sendPostRequest(url, jsonData string) (string, error) {
 		return "", fmt.Errorf("could not read response body: %v", err)
 	}
 	return string(body), nil
+}
+
+func TestNodeKeyGen(t *testing.T) {
+	response, err := sendRequest("http://127.0.0.1:8081/nodekey", http.MethodGet, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(response)
 }
 
 func TestKeyGen(t *testing.T) {
@@ -55,7 +63,7 @@ func TestKeyGen(t *testing.T) {
 	for i := range urls {
 		wg.Add(1)
 		go func() {
-			response, err := sendPostRequest(urls[i], jsonData)
+			response, err := sendRequest(urls[i], http.MethodPost, jsonData)
 			if err != nil {
 				wg.Done()
 				t.Fatal(err)
@@ -92,7 +100,7 @@ func TestKeySign(t *testing.T) {
 	for i := range urls {
 		wg.Add(1)
 		go func() {
-			response, err := sendPostRequest(urls[i], jsonData)
+			response, err := sendRequest(urls[i], http.MethodPost, jsonData)
 			if err != nil {
 				wg.Done()
 				t.Fatal(err)
