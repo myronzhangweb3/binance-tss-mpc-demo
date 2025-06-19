@@ -147,24 +147,10 @@ func isOnCurve(x, y *big.Int) bool {
 }
 
 func GetTssPubKey(pubKeyPoint *crypto.ECPoint) (string, string, error) {
-	// we check whether the point is on curve according to Kudelski report
 	if pubKeyPoint == nil || !isOnCurve(pubKeyPoint.X(), pubKeyPoint.Y()) {
 		return "", "", errors.New("invalid points")
 	}
-	//tssPubKey := btcec.PublicKey{
-	//	Curve: btcec.S256(),
-	//	X:     pubKeyPoint.X(),
-	//	Y:     pubKeyPoint.Y(),
-	//}
-
-	//compressedPubkey := coskey.PubKey{
-	//	Key: tssPubKey.SerializeCompressed(),
-	//}
-
-	//pubKey, err := sdk.MarshalPubKey(sdk.AccPK, &compressedPubkey) // nolint:staticcheck
-	//addr := cosmos.AccAddress(compressedPubkey.Address().Bytes())
 	address := ethcrypto.PubkeyToAddress(*pubKeyPoint.ToECDSAPubKey())
-
 	return address.String(), address.String(), nil
 }
 
