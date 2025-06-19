@@ -73,15 +73,13 @@ go run cmd/tss-recovery/main.go --tss-port 127.0.0.1:8083 --pretty-log --p2p-por
 
 ### Generate Key
 
-```bash
-sh ./keygen.sh
-```
+[api_test.go](cmd/tss/api_test.go)
 
 ```bash
 curl --location --request GET 'http://127.0.0.1:8001/api/v1/deriving/0x3D3A3B117a2f2393FBcdF95e9DA47c1166b469e7/key1'
 ```
 
 ###  Sign
-```bash
-sh ./keysign.sh
-```
+
+[api_test.go](cmd/tss/api_test.go)
+

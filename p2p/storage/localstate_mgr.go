@@ -57,8 +57,8 @@ func NewFileStateMgr(folder string) (*FileStateMgr, error) {
 	}, nil
 }
 
-func (fsm *FileStateMgr) getFilePathName(pubKey string) (string, error) {
-	ret, err := conversion.CheckKeyOnCurve(pubKey)
+func (fsm *FileStateMgr) getFilePathName(address string) (string, error) {
+	ret, err := conversion.CheckAddress(address)
 	if err != nil {
 		return "", err
 	}
@@ -66,7 +66,7 @@ func (fsm *FileStateMgr) getFilePathName(pubKey string) (string, error) {
 		return "", errors.New("invalid pubkey for file name")
 	}
 
-	localFileName := fmt.Sprintf("localstate-%s.json", pubKey)
+	localFileName := fmt.Sprintf("localstate-%s.json", address)
 	if len(fsm.folder) > 0 {
 		return filepath.Join(fsm.folder, localFileName), nil
 	}

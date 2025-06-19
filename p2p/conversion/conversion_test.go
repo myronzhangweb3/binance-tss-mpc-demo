@@ -216,12 +216,12 @@ func (p *ConversionTestSuite) TestTssPubKey(c *C) {
 	pk, addr, err := GetTssPubKey(nil)
 	c.Assert(err, NotNil)
 	c.Assert(pk, Equals, "")
-	c.Assert(addr.Bytes(), HasLen, 0)
+	c.Assert(addr, HasLen, 0)
 	SetupBech32Prefix()
 	// var point crypto.ECPoint
 	c.Assert(json.Unmarshal([]byte(`{"Coords":[70074650318631491136896111706876206496089700125696166275258483716815143842813,72125378038650252881868972131323661098816214918201601489154946637636730727892]}`), &point), IsNil)
 	pk, addr, err = GetTssPubKey(point)
 	c.Assert(err, IsNil)
-	c.Assert(pk, Equals, "thorpub1addwnpepq2dwek9hkrlxjxadrlmy9fr42gqyq6029q0hked46l3u6a9fxqel6tma5eu")
-	c.Assert(addr.String(), Equals, "thor17l7cyxqzg4xymnl0alrhqwja276s3rns3fjdvm")
+	c.Assert(pk, Equals, "0x28780162165761F12fCe61F01F8607d076a6ED58")
+	c.Assert(addr, Equals, "0x28780162165761F12fCe61F01F8607d076a6ED58")
 }

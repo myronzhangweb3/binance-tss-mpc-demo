@@ -1,14 +1,12 @@
 package keysign
 
 import (
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"math/big"
-
 	"github.com/binance-chain/tss-lib/common"
-	sdk "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
-	"github.com/tendermint/btcd/btcec"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 )
 
 // Notifier is design to receive keysign signature, success or failure
@@ -43,17 +41,15 @@ func NewNotifier(messageID string, messages [][]byte, poolPubKey string) (*Notif
 // first and then verify the hash of the message against the signature , which is not the case in tss
 // go-tss respect the payload it receives , assume the payload had been hashed already by whoever send it in.
 func (n *Notifier) verifySignature(data *common.ECSignature, msg []byte) (bool, error) {
-	return true, nil
-	// we should be able to use any of the pubkeys to verify the signature
-	pubKey, err := sdk.UnmarshalPubKey(sdk.AccPK, n.poolPubKey)
+	pubKey, err := secp256k1.RecoverPubkey(msg, append(data.Signature, data.SignatureRecovery...))
 	if err != nil {
-		return false, fmt.Errorf("fail to get pubkey from bech32 pubkey string(%s):%w", n.poolPubKey, err)
+		return false, fmt.Errorf("fail to recover public key:%w", err)
 	}
-	pub, err := btcec.ParsePubKey(pubKey.Bytes(), btcec.S256())
+	pk, err := crypto.UnmarshalPubkey(pubKey)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("fail to unmarshal public key:%w", err)
 	}
-	return ecdsa.Verify(pub.ToECDSA(), msg, new(big.Int).SetBytes(data.R), new(big.Int).SetBytes(data.S)), nil
+	return ethcommon.HexToAddress(n.poolPubKey) == crypto.PubkeyToAddress(*pk), nil
 }
 
 // ProcessSignature is to verify whether the signature is valid

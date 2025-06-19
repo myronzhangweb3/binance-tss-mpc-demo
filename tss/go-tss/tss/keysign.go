@@ -179,7 +179,6 @@ func (t *TssServer) updateKeySignResult(result keysign.Response, timeSpent time.
 		return
 	}
 	t.tssMetrics.UpdateKeySign(timeSpent, false)
-	return
 }
 
 func (t *TssServer) KeySign(req keysign.Request) (keysign.Response, error) {

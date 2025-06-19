@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/btcsuite/btcd/btcec"
 	tcrypto "github.com/cometbft/cometbft/crypto"
 	"github.com/cometbft/cometbft/crypto/secp256k1"
 	coskey "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -110,15 +110,6 @@ func GetPriKeyRawBytes(priKey tcrypto.PrivKey) ([]byte, error) {
 	return keyBytesArray[:], nil
 }
 
-func CheckKeyOnCurve(pk string) (bool, error) {
-	return true, nil
-	pubKey, err := sdk.UnmarshalPubKey(sdk.AccPK, pk) // nolint:staticcheck
-	if err != nil {
-		return false, fmt.Errorf("fail to parse pub key(%s): %w", pk, err)
-	}
-	bPk, err := btcec.ParsePubKey(pubKey.Bytes(), btcec.S256())
-	if err != nil {
-		return false, err
-	}
-	return isOnCurve(bPk.X, bPk.Y), nil
+func CheckAddress(addr string) (bool, error) {
+	return common.IsHexAddress(addr), nil
 }

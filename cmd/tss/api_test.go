@@ -105,3 +105,8 @@ func TestKeySign(t *testing.T) {
 	elapsedTime := time.Since(startTime)
 	fmt.Printf("Total time taken: %s\n", elapsedTime)
 }
+
+func TestKeyGenAndSign(t *testing.T) {
+	TestKeyGen(t)
+	TestKeySign(t)
+}
